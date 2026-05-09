@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // -------------------------------------------------------------------------
+    // Global Safety Net: Default Deny All
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // UTILITY HELPERS
+    // -------------------------------------------------------------------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Schema Validation Helpers
+    function isValidSite(data) {
+      return data.keys().hasAll(['name', 'ownerId']) &&
+             data.keys().size() >= 2 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidLaborer(data) {
+      return data.keys().hasAll(['name', 'siteId', 'dailyWage', 'ownerId']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.siteId is string &&
+             data.dailyWage is number && data.dailyWage >= 0 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidLog(data) {
+      return data.keys().hasAll(['laborerId', 'siteId', 'date', 'ownerId']) &&
+             data.laborerId is string &&
+             data.siteId is string &&
+             data.date is string &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidRate(data) {
+      return data.keys().hasAll(['material', 'price', 'unit', 'ownerId']) &&
+             data.material is string &&
+             data.price is number && data.price >= 0 &&
+             data.unit is string &&
+             data.ownerId == request.auth.uid;
+    }
+
+    function isValidPhoto(data) {
+      return data.keys().hasAll(['siteId', 'imageUrl', 'ownerId']) &&
+             data.siteId is string &&
+             data.imageUrl is string &&
+             data.ownerId == request.auth.uid;
+    }
+
+    // Relational Check: Does the site exist and belong to the user?
+    function userOwnsSite(siteId) {
+      return get(/databases/$(database)/documents/sites/$(siteId)).data.ownerId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // COLLECTIONS
+    // -------------------------------------------------------------------------
+
+    // Connection Test
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // SITES
+    match /sites/{siteId} {
+      allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidSite(request.resource.data);
+      allow update: if isSignedIn() && 
+                    resource.data.ownerId == request.auth.uid &&
+                    isValidSite(request.resource.data) &&
+                    request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+
+      // LABORERS
+      match /laborers/{laborerId} {
+        allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && isValidLaborer(request.resource.data) && userOwnsSite(siteId);
+        allow update: if isSignedIn() && 
+                      resource.data.ownerId == request.auth.uid &&
+                      isValidLaborer(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      }
+
+      // LOGS
+      match /logs/{logId} {
+        allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && isValidLog(request.resource.data) && userOwnsSite(siteId);
+        allow update: if isSignedIn() && 
+                      resource.data.ownerId == request.auth.uid &&
+                      isValidLog(request.resource.data) &&
+                      request.resource.data.ownerId == resource.data.ownerId;
+        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      }
+
+      // PHOTOS
+      match /photos/{photoId} {
+        allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && isValidPhoto(request.resource.data) && userOwnsSite(siteId);
+        allow update: if isSignedIn() && 
+                      resource.data.ownerId == request.auth.uid &&
+                      isValidPhoto(request.resource.data);
+        allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      }
+    }
+
+    // RATES
+    match /rates/{rateId} {
+      allow get: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isSignedIn() && isValidRate(request.resource.data);
+      allow update: if isSignedIn() && 
+                    resource.data.ownerId == request.auth.uid &&
+                    isValidRate(request.resource.data) &&
+                    request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+  }
+}

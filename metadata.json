@@ -1,0 +1,9 @@
+{
+  "name": "Namma-Mistri",
+  "description": "A rugged construction assistant for masons to calculate materials, manage labor diaries, and track site progress with 'Standard Rates' for building materials.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}

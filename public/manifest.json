@@ -1,0 +1,16 @@
+{
+  "short_name": "Namma Mistri",
+  "name": "Namma Mistri - Construction Assistant",
+  "icons": [
+    {
+      "src": "/namma_mistri_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#f97316",
+  "background_color": "#020617"
+}

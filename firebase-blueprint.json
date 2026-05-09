@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "Site": {
+      "title": "Site",
+      "description": "A construction site being managed by the Mistri.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the site/house owner." },
+        "location": { "type": "string", "description": "Physical location or address." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "ownerId": { "type": "string", "description": "The UID of the Mistri who owns this record." }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "Laborer": {
+      "title": "Laborer",
+      "description": "A worker employed at a specific site.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "siteId": { "type": "string" },
+        "dailyWage": { "type": "number" },
+        "totalAdvances": { "type": "number" },
+        "totalEarnings": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["name", "siteId", "dailyWage", "ownerId"]
+    },
+    "DailyLog": {
+      "title": "Daily Log",
+      "description": "Attendance and advance payment record for a laborer.",
+      "type": "object",
+      "properties": {
+        "laborerId": { "type": "string" },
+        "siteId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "present": { "type": "boolean" },
+        "advanceAmount": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["laborerId", "siteId", "date", "ownerId"]
+    },
+    "StandardRate": {
+      "title": "Standard Rate",
+      "description": "Local price for construction materials.",
+      "type": "object",
+      "properties": {
+        "material": { "type": "string", "enum": ["Cement", "Bricks", "Sand", "Steel", "Crushed Stone"] },
+        "price": { "type": "number" },
+        "unit": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["material", "price", "unit", "ownerId"]
+    },
+    "SitePhoto": {
+      "title": "Site Photo",
+      "description": "A photo tracking progress at a site.",
+      "type": "object",
+      "properties": {
+        "siteId": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "caption": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["siteId", "imageUrl", "ownerId"]
+    }
+  },
+  "firestore": {
+    "/sites/{siteId}": {
+      "schema": "Site",
+      "description": "Construction sites."
+    },
+    "/sites/{siteId}/laborers/{laborerId}": {
+      "schema": "Laborer",
+      "description": "Laborers belonging to a site."
+    },
+    "/sites/{siteId}/logs/{logId}": {
+      "schema": "DailyLog",
+      "description": "Daily attendance and payment logs for laborers at a site."
+    },
+    "/sites/{siteId}/photos/{photoId}": {
+      "schema": "SitePhoto",
+      "description": "Progress photos for a site."
+    },
+    "/rates/{rateId}": {
+      "schema": "StandardRate",
+      "description": "User's personalized material rates."
+    }
+  }
+}
